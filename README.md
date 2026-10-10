@@ -152,3 +152,16 @@ To enable live AI processing with the Gemini API:
 - **Zero Outbound Spam / Zero Unverified Tasks:** Action items are never committed to Asana before explicit human verification.
 - **No Inferred Hallucinations:** Items where the speaker did not explicitly commit to a date/owner are flagged with the `Inferred Context` badge.
 - **No External Infrastructure Required:** The application is entirely self-contained (no Celery, Redis, or external message brokers required).
+
+
+## 🖼️ Application Screenshots
+
+| Executive Meeting Dashboard | Executive Briefing & Key Decisions |
+|:---:|:---:|
+| ![Meeting Dashboard](screenshots/frame_dashboard.png) | ![Executive Briefing](screenshots/frame_briefing.png) |
+| *Multi-meeting analytics, sentiment trends, & topic overview* | *AI-synthesized summaries, risks, & critical takeaways* |
+
+| Interactive Transcript & Speaker Diarization | Task & Action Item Integration |
+|:---:|:---:|
+| ![Transcript Analysis](screenshots/frame_transcripts.png) | ![Asana & Task Sync](screenshots/frame_asana.png) |
+| *Timestamped speaker breakdown with search & entity tagging* | *Automated action item extraction and Asana/Linear export* |
