@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Extraction Studio: {{ transcript.title }} — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <a href="{% url 'intelligence:transcript_list' %}" class="text-slate-400 hover:text-white mr-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i>
+    </a>
+    Transcript Extraction Studio
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+    <!-- Header Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs px-2.5 py-0.5 rounded uppercase font-mono bg-slate-800 text-indigo-300 border border-slate-700">
+                    {{ transcript.get_format_display }}
+                </span>
+                <span class="text-xs text-slate-400">Word Count: {{ transcript.word_count }} &bull; Duration: ~{{ transcript.duration_minutes }}m</span>
+                {% if transcript.client %}
+                <span class="text-slate-500">&bull;</span>
+                <span class="text-xs text-slate-300 font-medium">Client: {{ transcript.client.name }}</span>
+                {% endif %}
+            </div>
+            <h2 class="text-xl font-bold text-white">{{ transcript.title }}</h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Run Extraction Action -->
+            <form method="post" action="{% url 'intelligence:transcript_process' transcript.id %}" hx-post="{% url 'intelligence:transcript_process' transcript.id %}" hx-target="#extraction-results-container" hx-indicator="#extraction-spinner">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="cpu" class="w-4 h-4 mr-1.5"></i>
+                    <span>{% if transcript.status == 'processed' %}Re-Run AI Extraction{% else %}Run AI Extraction{% endif %}</span>
+                    <span id="extraction-spinner" class="htmx-indicator ml-2">
+                        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                    </span>
+                </button>
+            </form>
+
+            <button type="button" onclick="document.getElementById('raw-transcript-box').classList.toggle('hidden')" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition flex items-center">
+                <i data-lucide="file-text" class="w-4 h-4 mr-1.5 text-slate-400"></i>
+                Toggle Raw Transcript Text
+            </button>
+        </div>
+    </div>
+
+    <!-- Collapsible Raw Transcript Viewer -->
+    <div id="raw-transcript-box" class="bg-slate-950 border border-slate-800 rounded-xl p-5 hidden">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Source Content ({{ transcript.source_filename }})</span>
+            <span class="text-xs text-slate-500 font-mono">{{ transcript.word_count }} words</span>
+        </div>
+        <pre class="text-xs text-slate-300 font-mono leading-relaxed overflow-x-auto max-h-96 whitespace-pre-wrap">{{ transcript.raw_content }}</pre>
+    </div>
+
+    <!-- Extraction Results Container -->
+    <div id="extraction-results-container">
+        {% include "intelligence/partials/transcript_results.html" with summary=summary actions=actions transcript=transcript %}
+    </div>
+
+</div>
+{% endblock %}

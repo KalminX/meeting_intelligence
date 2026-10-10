@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated Calendar — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="calendar" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Simulated Client Calendar & Briefing Trigger
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+    <!-- Header Banner -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                <span>Google Workspace Calendar (Simulated)</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/40">Sync Active</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+                Synced with account <code class="text-indigo-300">sarah.lin@meetingintel.demo</code>. Trigger AI intelligence packs prior to client calls.
+            </p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'intelligence:integrations' %}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 font-medium transition flex items-center">
+                <i data-lucide="layers" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i> Integration Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Upcoming Meetings List -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-base font-bold text-white">Upcoming Client Engagements</h3>
+            </div>
+            <span class="text-xs text-slate-400">{{ upcoming_meetings|length }} meetings scheduled</span>
+        </div>
+
+        <div class="space-y-4">
+            {% for meeting in upcoming_meetings %}
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-2 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/50">
+                            {{ meeting.get_meeting_type_display }}
+                        </span>
+                        <span class="text-xs font-bold text-white">{{ meeting.client.name }}</span>
+                        <span class="text-xs text-slate-400">(${ meeting.client.arr|floatformat:0 }} ARR &bull; {{ meeting.client.get_tier_display }})</span>
+                        <span class="text-[11px] px-2 py-0.5 rounded-full {% if meeting.client.health_status == 'healthy' %}bg-emerald-950/80 text-emerald-300 border border-emerald-800/40{% else %}bg-amber-950/80 text-amber-300 border border-amber-800/40{% endif %}">
+                            Health: {{ meeting.client.health_score }}%
+                        </span>
+                    </div>
+
+                    <h4 class="text-base font-semibold text-white">
+                        <a href="{% url 'intelligence:meeting_detail' meeting.id %}" class="hover:text-indigo-400 transition">
+                            {{ meeting.title }}
+                        </a>
+                    </h4>
+
+                    <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                        <span class="flex items-center text-indigo-300 font-medium">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                            {{ meeting.scheduled_start|date:"l, F d, Y" }}
+                        </span>
+                        <span class="flex items-center">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                            {{ meeting.scheduled_start|date:"H:i" }} - {{ meeting.scheduled_end|date:"H:i" }} UTC
+                        </span>
+                        <a href="{{ meeting.location_url }}" target="_blank" class="flex items-center text-indigo-400 hover:underline">
+                            <i data-lucide="video" class="w-3.5 h-3.5 mr-1"></i>
+                            Mock Google Meet
+                        </a>
+                    </div>
+
+                    <!-- Attendees Preview -->
+                    <div class="flex items-center space-x-2 pt-1">
+                        <span class="text-xs text-slate-400 font-medium">Attendees:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            {% for att in meeting.attendees %}
+                            <span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                                {{ att.name }} {% if not att.is_internal %}<span class="text-slate-500 font-mono">({{ att.role }})</span>{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action CTA -->
+                <div class="flex flex-col sm:flex-row md:flex-col items-end gap-2 flex-shrink-0">
+                    {% if meeting.has_briefing %}
+                    <a href="{% url 'intelligence:meeting_briefing' meeting.id %}" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-sm shadow-indigo-600/30 transition flex items-center justify-center space-x-1.5">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>View Briefing Dossier</span>
+                    </a>
+                    <form method="post" action="{% url 'intelligence:generate_briefing' meeting.id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="force_refresh" value="true">
+                        <button type="submit" class="text-xs text-slate-400 hover:text-slate-200 transition py-1">
+                            <i data-lucide="refresh-cw" class="w-3 h-3 inline mr-1"></i> Refresh AI
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'intelligence:generate_briefing' meeting.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-indigo-600/30 transition flex items-center space-x-1.5">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span>Generate AI Briefing</span>
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'intelligence:meeting_detail' meeting.id %}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+                        Meeting Details &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Past Meetings -->
+    {% if past_meetings %}
+    <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Completed / Past Meetings</h3>
+        <div class="space-y-3">
+            {% for meeting in past_meetings %}
+            <div class="bg-slate-950/40 border border-slate-800/60 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-slate-500 font-mono">{{ meeting.scheduled_start|date:"M d, Y" }}</span>
+                    <h4 class="text-sm font-semibold text-slate-300">{{ meeting.title }} ({{ meeting.client.name }})</h4>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'intelligence:meeting_detail' meeting.id %}" class="text-xs text-indigo-400 hover:underline">
+                        View History &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

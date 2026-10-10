@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Transcripts & AI Extraction — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="file-audio" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Meeting Transcripts & AI Extraction
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-7xl mx-auto">
+
+    <!-- Ingest & Upload Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="max-w-3xl mb-6">
+            <h2 class="text-base font-bold text-white mb-1">Ingest Meeting Transcript</h2>
+            <p class="text-xs text-slate-400">
+                Upload raw transcripts (<code class="text-indigo-300">.vtt</code>, <code class="text-indigo-300">.md</code>, <code class="text-indigo-300">.txt</code>), select a pre-built enterprise sample, or paste call notes.
+            </p>
+        </div>
+
+        <form method="post" action="{% url 'intelligence:transcript_upload' %}" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+
+            <!-- 1-Click Sample Choice -->
+            <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4">
+                <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2 flex items-center">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5"></i>
+                    Option A: Load Realistic Enterprise Sample (Instant Demo)
+                </label>
+                {{ form.sample_choice }}
+            </div>
+
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-slate-800"></div>
+                <span class="flex-shrink mx-4 text-xs font-semibold text-slate-500 uppercase">Or Upload / Paste Custom Transcript</span>
+                <div class="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Transcript Title</label>
+                    {{ form.title }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Client Association</label>
+                    {{ form.client }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Calendar Event (Optional)</label>
+                    {{ form.meeting }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Upload File (.vtt, .md, .txt)</label>
+                    {{ form.transcript_file }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Format</label>
+                    {{ form.format }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Or Paste Raw Transcript Text</label>
+                {{ form.raw_content }}
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <span>Ingest Transcript & Open Studio</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Processed Transcripts Repository -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="archive" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="text-base font-bold text-white">Transcript Repository & Extraction Status</h3>
+            </div>
+            <span class="text-xs text-slate-400">{{ transcripts|length }} transcripts indexed</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                    <tr>
+                        <th class="py-3 px-4">Title & Client</th>
+                        <th class="py-3 px-4">Format</th>
+                        <th class="py-3 px-4">Words & Duration</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4">Decisions & Actions</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    {% for item in transcripts %}
+                    <tr class="hover:bg-slate-950/50 transition">
+                        <td class="py-3.5 px-4">
+                            <a href="{% url 'intelligence:transcript_detail' item.id %}" class="font-bold text-white hover:text-indigo-400 transition block text-sm">
+                                {{ item.title }}
+                            </a>
+                            <span class="text-slate-400 text-[11px]">
+                                Client: {{ item.client.name|default:"Internal Sync" }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded uppercase font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                                {{ item.get_format_display }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">
+                            {{ item.word_count }} words &bull; ~{{ item.duration_minutes }}m
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold {% if item.status == 'processed' %}bg-emerald-950/80 text-emerald-300 border border-emerald-800/50{% elif item.status == 'processing' %}bg-indigo-950/80 text-indigo-300 border border-indigo-800/50 animate-pulse{% elif item.status == 'failed' %}bg-rose-950/80 text-rose-300 border border-rose-800/50{% else %}bg-slate-800 text-slate-400{% endif %}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            {% if item.summary_record %}
+                            <span class="text-emerald-400 font-semibold">{{ item.summary_record.key_decisions|length }} Decisions</span>
+                            <span class="text-slate-500">&bull;</span>
+                            <span class="text-indigo-300 font-semibold">{{ item.extracted_actions.count }} Actions</span>
+                            {% else %}
+                            <span class="text-slate-500 italic">Not extracted yet</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <a href="{% url 'intelligence:transcript_detail' item.id %}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-lg text-xs font-semibold transition">
+                                Open Studio &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-500">
+                            No transcripts uploaded. Pick a sample above to get started!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

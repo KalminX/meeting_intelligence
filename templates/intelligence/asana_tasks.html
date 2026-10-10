@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated Asana Task Manager — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Simulated Asana Task Manager
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+    <!-- Top Project & Filter Toolbar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <!-- Project Tabs -->
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="?view={{ view_mode }}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if not current_project %}bg-indigo-600 text-white shadow-sm shadow-indigo-600/30{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                    All Projects
+                </a>
+                {% for proj in projects %}
+                <a href="?project={{ proj.id }}&view={{ view_mode }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 {% if current_project == proj.id|stringformat:'s' %}text-white bg-indigo-600 shadow-sm shadow-indigo-600/30{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                    <span class="w-2 h-2 rounded-full" style="background-color: {{ proj.color_hex }};"></span>
+                    <span>{{ proj.name }}</span>
+                    <span class="text-[10px] text-slate-400 font-mono">({{ proj.open_tasks_count }})</span>
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- View Switcher (List vs Board) -->
+            <div class="flex items-center space-x-2 bg-slate-950 p-1 rounded-lg border border-slate-800 self-start md:self-auto">
+                <a href="?project={{ current_project }}&status={{ current_status }}&view=list" class="px-3 py-1 rounded text-xs font-semibold transition flex items-center space-x-1 {% if view_mode == 'list' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                    <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                    <span>List</span>
+                </a>
+                <a href="?project={{ current_project }}&status={{ current_status }}&view=board" class="px-3 py-1 rounded text-xs font-semibold transition flex items-center space-x-1 {% if view_mode == 'board' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                    <i data-lucide="kanban" class="w-3.5 h-3.5"></i>
+                    <span>Board</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Secondary Status Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800 text-xs">
+            <span class="text-slate-500 font-medium">Filter Status:</span>
+            <a href="?project={{ current_project }}&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if not current_status %}text-indigo-400 font-bold bg-slate-800/80{% else %}text-slate-400 hover:text-white{% endif %}">
+                All
+            </a>
+            <a href="?project={{ current_project }}&status=overdue&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if current_status == 'overdue' %}text-rose-300 font-bold bg-rose-950 border border-rose-800/50{% else %}text-rose-400 hover:text-rose-300{% endif %}">
+                <i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i> Overdue Only
+            </a>
+            <a href="?project={{ current_project }}&status=todo&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if current_status == 'todo' %}text-indigo-400 font-bold bg-slate-800/80{% else %}text-slate-400 hover:text-white{% endif %}">
+                To Do
+            </a>
+            <a href="?project={{ current_project }}&status=in_progress&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if current_status == 'in_progress' %}text-indigo-400 font-bold bg-slate-800/80{% else %}text-slate-400 hover:text-white{% endif %}">
+                In Progress
+            </a>
+            <a href="?project={{ current_project }}&status=under_review&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if current_status == 'under_review' %}text-indigo-400 font-bold bg-slate-800/80{% else %}text-slate-400 hover:text-white{% endif %}">
+                Under Review
+            </a>
+            <a href="?project={{ current_project }}&status=completed&view={{ view_mode }}" class="px-2.5 py-1 rounded {% if current_status == 'completed' %}text-emerald-400 font-bold bg-slate-800/80{% else %}text-slate-400 hover:text-white{% endif %}">
+                Completed
+            </a>
+        </div>
+    </div>
+
+    {% if view_mode == 'board' %}
+    <!-- Kanban Board View -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+        
+        <!-- To Do Column -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">To Do</h4>
+                <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">{{ board_columns.todo|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in board_columns.todo %}
+                    {% include "intelligence/partials/task_row.html" with task=task %}
+                {% empty %}
+                <p class="text-xs text-slate-600 text-center py-6">No tasks in To Do</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">In Progress</h4>
+                <span class="text-xs bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded-full font-mono">{{ board_columns.in_progress|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in board_columns.in_progress %}
+                    {% include "intelligence/partials/task_row.html" with task=task %}
+                {% empty %}
+                <p class="text-xs text-slate-600 text-center py-6">No tasks in progress</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Under Review Column -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Under Review</h4>
+                <span class="text-xs bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full font-mono">{{ board_columns.under_review|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in board_columns.under_review %}
+                    {% include "intelligence/partials/task_row.html" with task=task %}
+                {% empty %}
+                <p class="text-xs text-slate-600 text-center py-6">No tasks under review</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Completed Column -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Completed</h4>
+                <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full font-mono">{{ board_columns.completed|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in board_columns.completed %}
+                    {% include "intelligence/partials/task_row.html" with task=task %}
+                {% empty %}
+                <p class="text-xs text-slate-600 text-center py-6">No completed tasks</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    {% else %}
+    <!-- List View -->
+    <div class="space-y-3">
+        {% for task in tasks %}
+            {% include "intelligence/partials/task_row.html" with task=task %}
+        {% empty %}
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-500 shadow-sm">
+            <i data-lucide="check-circle-2" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+            <p class="text-sm font-semibold text-slate-300">No tasks match the active filters.</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

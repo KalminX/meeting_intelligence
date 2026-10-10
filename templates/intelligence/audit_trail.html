@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Enterprise Audit Trail & Governance Log
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+    <!-- Search & Filter Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+        <form method="get" class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex-1 w-full flex flex-col sm:flex-row gap-3">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search audit logs by actor, title, or keywords..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:ring-2 focus:ring-indigo-500">
+                
+                <select name="type" class="bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- All Event Types --</option>
+                    {% for key, val in event_types %}
+                    <option value="{{ key }}" {% if current_type == key %}selected{% endif %}>{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition">
+                    Filter Logs
+                </button>
+                {% if search_query or current_type %}
+                <a href="{% url 'intelligence:audit_trail' %}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700">
+                    Reset
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Audit Events Ledger -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Immutable Activity Log</h3>
+            <span class="text-xs text-slate-400 font-mono">{{ audits|length }} events displayed</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                    <tr>
+                        <th class="py-3 px-4">Event Type</th>
+                        <th class="py-3 px-4">Title & Description</th>
+                        <th class="py-3 px-4">Actor</th>
+                        <th class="py-3 px-4">Client / Context</th>
+                        <th class="py-3 px-4 text-right">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    {% for item in audits %}
+                    <tr class="hover:bg-slate-950/50 transition">
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono {% if 'approved' in item.event_type %}bg-emerald-950 text-emerald-300 border border-emerald-800/40{% elif 'rejected' in item.event_type %}bg-rose-950 text-rose-300 border border-rose-800/40{% elif 'briefing' in item.event_type %}bg-indigo-950 text-indigo-300 border border-indigo-800/40{% else %}bg-slate-800 text-slate-300 border border-slate-700{% endif %}">
+                                {{ item.get_event_type_display }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 max-w-md">
+                            <strong class="text-white block">{{ item.title }}</strong>
+                            <p class="text-slate-400 text-[11px] mt-0.5 line-clamp-2">{{ item.description }}</p>
+                        </td>
+                        <td class="py-3.5 px-4 font-medium text-slate-200">
+                            {{ item.actor_name }}
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-400">
+                            {{ item.client.name|default:"General / System" }}
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-mono text-slate-500 text-[11px] whitespace-nowrap">
+                            {{ item.created_at|date:"Y-m-d H:i:s" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-500">
+                            No audit log events found matching the search criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

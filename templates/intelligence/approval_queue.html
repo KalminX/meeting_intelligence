@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Human Review Queue — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="check-square" class="w-5 h-5 text-amber-400 mr-2"></i>
+    Human-in-the-Loop Action Approval Queue
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+
+    <!-- Filters & Stats Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Status Tabs -->
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="?status=pending_review" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 {% if current_status == 'pending_review' %}bg-amber-500/20 text-amber-300 border border-amber-500/40{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                <span>Pending Review</span>
+                <span class="bg-amber-400/30 text-amber-200 px-1.5 py-0.2 rounded-full text-[10px]">{{ pending_total }}</span>
+            </a>
+            <a href="?status=approved" class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if current_status == 'approved' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/40{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Approved
+            </a>
+            <a href="?status=modified" class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if current_status == 'modified' %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Modified & Approved
+            </a>
+            <a href="?status=rejected" class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if current_status == 'rejected' %}bg-rose-500/20 text-rose-300 border border-rose-500/40{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Rejected
+            </a>
+            <a href="?status=all" class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if current_status == 'all' %}bg-slate-700 text-white border border-slate-600{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                All Items
+            </a>
+        </div>
+
+        <div class="text-xs text-slate-400 flex items-center">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400 mr-1.5"></i>
+            Guardrail: AI extractions never write to Asana before explicit human verification.
+        </div>
+    </div>
+
+    <!-- Actions List -->
+    <div class="space-y-4">
+        {% for action in actions %}
+            {% include "intelligence/partials/action_row.html" with action=action %}
+        {% empty %}
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-500 shadow-sm">
+            <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-emerald-500/40"></i>
+            <h3 class="text-base font-bold text-slate-300 mb-1">Queue is Clear</h3>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                No items matching the filter <strong class="text-indigo-300">"{{ current_status }}"</strong>. 
+                Upload or process a transcript to generate new action items.
+            </p>
+            <div class="mt-4">
+                <a href="{% url 'intelligence:transcript_list' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition">
+                    <i data-lucide="upload-cloud" class="w-4 h-4 mr-1.5"></i>
+                    Upload New Transcript
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

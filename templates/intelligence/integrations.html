@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated Integrations — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="layers" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Simulated Integrations & Mock Connectors
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+    <!-- Notice Banner -->
+    <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-5 flex items-start space-x-3.5 text-xs text-indigo-200">
+        <i data-lucide="info" class="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <strong class="font-bold text-white block mb-1 text-sm">Simulated Local Environment Notice</strong>
+            <p class="leading-relaxed">
+                All integrations (Google Calendar, Gmail Workspace, and Asana Enterprise) operate in <strong>deterministic simulated mode</strong>. 
+                The application requires zero OAuth setup, API tokens, or external accounts. All sync actions generate realistic enterprise records within the local SQLite database.
+            </p>
+        </div>
+    </div>
+
+    <!-- Integrations Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for integration in integrations %}
+            {% include "intelligence/partials/integration_card.html" with integration=integration %}
+        {% endfor %}
+    </div>
+
+    <!-- Integration Sync Audit Events -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center">
+                <i data-lucide="activity" class="w-4 h-4 text-indigo-400 mr-2"></i>
+                Recent Integration Activity & Webhook Events
+            </h3>
+            <span class="text-xs text-slate-400">{{ recent_sync_audits|length }} events</span>
+        </div>
+
+        <div class="space-y-2.5">
+            {% for event in recent_sync_audits %}
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-lg p-3 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="font-bold text-white">{{ event.title }}</span>
+                    <p class="text-slate-400 text-[11px] mt-0.5">{{ event.description }}</p>
+                </div>
+                <div class="text-right text-slate-500 font-mono text-[11px]">
+                    {{ event.created_at|date:"M d, H:i:s" }}
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-xs text-slate-500 text-center py-4">No sync events recorded yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+<!-- Partial Briefing Pack Content (Swap Target for HTMX) -->
+<div class="space-y-6">
+
+    <!-- AI Meta Banner -->
+    <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="text-slate-300">Generated: <strong class="text-white">{{ briefing.generated_at|date:"M d, Y @ H:i" }} UTC</strong></span>
+            <span class="text-slate-500">&bull;</span>
+            <span class="text-slate-300">AI Provider: <code class="text-indigo-300 bg-slate-900 px-1.5 py-0.5 rounded">{{ briefing.ai_provider }}</code></span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button type="button" onclick="document.getElementById('raw-prompt-modal').classList.toggle('hidden')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition flex items-center">
+                <i data-lucide="code" class="w-3.5 h-3.5 mr-1 text-indigo-400"></i>
+                Inspect AI Prompt & JSON
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. Executive Summary -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center">
+            <i data-lucide="compass" class="w-4 h-4 mr-2"></i>
+            Executive Synthesis & Strategic Objective
+        </h3>
+        <p class="text-sm text-slate-100 leading-relaxed font-sans">
+            {{ briefing.executive_summary }}
+        </p>
+    </div>
+
+    <!-- 2. Financial Context & Relationship Health Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Financial Context -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400 mr-2"></i>
+                Commercial & Financial Snapshot
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div class="flex justify-between pb-2 border-b border-slate-800/80">
+                    <span class="text-slate-400">Current ARR:</span>
+                    <span class="font-bold text-white">{{ briefing.financial_snapshot.current_arr|default:meeting.client.arr }}</span>
+                </div>
+                <div class="flex justify-between pb-2 border-b border-slate-800/80">
+                    <span class="text-slate-400">Contract Status:</span>
+                    <span class="font-semibold text-slate-200">{{ briefing.financial_snapshot.contract_status|default:"Active Enterprise" }}</span>
+                </div>
+                <div class="flex justify-between pb-2 border-b border-slate-800/80">
+                    <span class="text-slate-400">Target Renewal Date:</span>
+                    <span class="font-semibold text-indigo-300">{{ briefing.financial_snapshot.renewal_date|default:meeting.client.renewal_date }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-1">Expansion Potential:</span>
+                    <p class="text-slate-200 bg-slate-950/70 p-2.5 rounded border border-slate-800/70">
+                        {{ briefing.financial_snapshot.expansion_potential|default:"Multi-region telemetry expansion." }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relationship Health & Sentiments -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                <i data-lucide="heart-pulse" class="w-4 h-4 text-rose-400 mr-2"></i>
+                Relationship Health & Sentiment
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                    <span class="text-slate-400">Account Health Score:</span>
+                    <span class="font-bold text-emerald-400">{{ briefing.relationship_health.score|default:meeting.client.health_score }}% ({{ meeting.client.get_health_status_display }})</span>
+                </div>
+                <p class="text-slate-200 leading-relaxed bg-slate-950/70 p-3 rounded border border-slate-800/70">
+                    {{ briefing.relationship_health.summary }}
+                </p>
+                <div>
+                    <span class="text-slate-400 block mb-1 font-semibold">Recent Email Touchpoints:</span>
+                    <ul class="space-y-1.5">
+                        {% for comm in briefing.recent_communications %}
+                        <li class="text-slate-300 bg-slate-950/40 p-2 rounded text-[11px] flex items-start">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                            <span>{{ comm }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Key Stakeholder Dossiers -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+            <i data-lucide="users" class="w-4 h-4 text-indigo-400 mr-2"></i>
+            Key Stakeholders Dossier & Motivations
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for person in briefing.stakeholder_analysis %}
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white text-sm">{{ person.name }}</span>
+                        <p class="text-slate-400 text-[11px]">{{ person.role }} &bull; {{ person.organization }}</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/40">
+                        {{ person.sentiment }}
+                    </span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-400 font-semibold block text-[11px]">Key Priorities:</span>
+                    <p class="text-slate-300">{{ person.key_priorities }}</p>
+                </div>
+                <div class="pt-1 bg-indigo-950/30 p-2 rounded border border-indigo-900/30">
+                    <span class="text-indigo-400 font-semibold block text-[11px]">Recommended Strategy:</span>
+                    <p class="text-slate-200">{{ person.recommended_approach }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 4. Strategic Talking Points & Risks to Deflect -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+            <i data-lucide="message-square" class="w-4 h-4 text-indigo-400 mr-2"></i>
+            Recommended Talking Points & Tactical Framing
+        </h3>
+        <div class="space-y-4">
+            {% for tp in briefing.strategic_talking_points %}
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-white text-sm">{{ tp.topic }}</h4>
+                    <span class="text-slate-400 text-[11px]">Objective: {{ tp.objective }}</span>
+                </div>
+                <div class="bg-slate-900/90 border-l-2 border-indigo-500 p-2.5 rounded-r">
+                    <span class="text-indigo-300 font-semibold block text-[11px]">Suggested Phrasing:</span>
+                    <p class="text-slate-200 font-serif italic text-sm mt-0.5">"{{ tp.suggested_phrasing }}"</p>
+                </div>
+                {% if tp.risk_to_deflect %}
+                <div class="text-[11px] text-amber-300 bg-amber-950/30 border border-amber-900/40 p-2 rounded flex items-center">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0"></i>
+                    <span>Trap to Deflect: {{ tp.risk_to_deflect }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 5. Previous Meeting Context & Pending Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+                <i data-lucide="history" class="w-4 h-4 text-indigo-400 mr-2"></i>
+                Previous Meeting Outcomes
+            </h3>
+            <p class="text-xs text-slate-200 leading-relaxed bg-slate-950/70 p-3.5 rounded border border-slate-800/70">
+                {{ briefing.previous_meeting_takeaways }}
+            </p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+                <i data-lucide="check-circle" class="w-4 h-4 text-amber-400 mr-2"></i>
+                Outstanding Commitments
+            </h3>
+            <div class="space-y-2">
+                {% for item in briefing.pending_action_items %}
+                <div class="text-xs bg-slate-950/70 border border-slate-800 p-2.5 rounded flex items-center justify-between">
+                    <div>
+                        <span class="font-semibold text-slate-200 block">{{ item.title }}</span>
+                        <span class="text-[11px] text-slate-400">Owner: {{ item.owner }}</span>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded font-bold {% if item.status == 'Completed' %}bg-emerald-950 text-emerald-300{% else %}bg-amber-950 text-amber-300{% endif %}">
+                        {{ item.status }}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-500">No open items pending from prior meetings.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>

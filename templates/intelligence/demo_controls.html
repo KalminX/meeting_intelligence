@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Demo Controls & AI Settings — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <i data-lucide="sliders" class="w-5 h-5 text-indigo-400 mr-2"></i>
+    Demo Environment Controls & AI Provider Settings
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto">
+
+    <!-- AI Provider Configuration Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-800">
+            <div>
+                <h2 class="text-base font-bold text-white">AI Engine Configuration</h2>
+                <p class="text-xs text-slate-400">Switch between offline Deterministic Mock mode and live Google Gemini API processing.</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-bold {% if current_mode == 'gemini' %}bg-emerald-950 text-emerald-300 border border-emerald-800/40{% else %}bg-indigo-950 text-indigo-300 border border-indigo-800/40{% endif %}">
+                Active Mode: {{ current_mode|upper }}
+            </span>
+        </div>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_ai_settings">
+
+            <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Select AI Processing Provider</label>
+                <div class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <input type="radio" id="mode_mock" name="ai_mode" value="mock" {% if current_mode == 'mock' %}checked{% endif %} class="text-indigo-600 focus:ring-indigo-500 h-4 w-4 bg-slate-900 border-slate-700">
+                        <label for="mode_mock" class="text-xs text-slate-200">
+                            <strong class="text-white block">Deterministic Mock AI Provider (Default / Recommended for Zero-Config Demos)</strong>
+                            <span class="text-slate-400 text-[11px]">Generates rich, repeatable schemas without requiring network access or external API keys.</span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center space-x-3 pt-3 border-t border-slate-800/80">
+                        <input type="radio" id="mode_gemini" name="ai_mode" value="gemini" {% if current_mode == 'gemini' %}checked{% endif %} class="text-indigo-600 focus:ring-indigo-500 h-4 w-4 bg-slate-900 border-slate-700">
+                        <label for="mode_gemini" class="text-xs text-slate-200">
+                            <strong class="text-white block">Google Gemini API (Live AI Processing)</strong>
+                            <span class="text-slate-400 text-[11px]">Invokes Gemini 1.5 Pro or Flash with JSON Schema validation and automatic mock fallback on failure.</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Gemini API Key (Optional)</label>
+                    <input type="password" name="gemini_api_key" value="{{ settings_form.gemini_api_key.value|default:'' }}" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-xs text-white font-mono focus:ring-2 focus:ring-indigo-500">
+                    <p class="text-[11px] text-slate-500 mt-1">Stored securely in runtime environment. Leave blank to use mock mode.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Gemini Model</label>
+                    <select name="gemini_model" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500">
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Recommended for deep reasoning)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (High speed)</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition shadow-lg shadow-indigo-600/30">
+                    Save AI Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Reseed Database & Reset Controls -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+                <h3 class="text-base font-bold text-white">Database Reseeding & Demo Reset</h3>
+                <p class="text-xs text-slate-400">Restore the clean enterprise demo state with 4 accounts, scheduled calendar calls, simulated emails, and Asana boards.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center text-xs">
+            <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block">Clients</span>
+                <strong class="text-base text-white mt-0.5 block">{{ clients_count }}</strong>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block">Meetings</span>
+                <strong class="text-base text-white mt-0.5 block">{{ meetings_count }}</strong>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block">Asana Tasks</span>
+                <strong class="text-base text-white mt-0.5 block">{{ tasks_count }}</strong>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block">Transcripts</span>
+                <strong class="text-base text-white mt-0.5 block">{{ transcripts_count }}</strong>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="text-slate-400 block">Audit Logs</span>
+                <strong class="text-base text-white mt-0.5 block">{{ audit_count }}</strong>
+            </div>
+        </div>
+
+        <div class="pt-2 flex justify-between items-center">
+            <span class="text-xs text-slate-400 font-medium">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline text-amber-400 mr-1"></i>
+                Reseeding clears existing test tasks and re-populates baseline enterprise demo records.
+            </span>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reseed">
+                <button type="submit" onclick="return confirm('Reseed demo database?');" class="px-4 py-2 bg-rose-900/40 hover:bg-rose-800/60 text-rose-200 border border-rose-700/60 rounded-lg text-xs font-bold transition flex items-center">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 mr-1.5"></i>
+                    Reset & Reseed Demo Data
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meeting Intelligence — AI Pre-Meeting & Action Tracking{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-flex;
+        }
+        .htmx-request.htmx-indicator {
+            display: inline-flex;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-indigo-500 selection:text-white" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20">
+            <!-- App Brand -->
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <a href="{% url 'intelligence:dashboard' %}" class="flex items-center space-x-3 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-base tracking-tight text-white block">Meeting Intel</span>
+                        <span class="text-[10px] uppercase font-semibold text-indigo-400 tracking-wider">Enterprise AI System</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- AI Engine Indicator & Quick Mode Badge -->
+            <div class="px-4 py-3 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full {% if current_ai_mode == 'gemini' %}bg-emerald-400 animate-pulse{% else %}bg-indigo-400{% endif %}"></span>
+                    <span class="text-slate-400 font-medium">Engine:</span>
+                    <span class="font-semibold {% if current_ai_mode == 'gemini' %}text-emerald-400{% else %}text-indigo-300{% endif %}">
+                        {% if current_ai_mode == 'gemini' %}Gemini Pro{% else %}Deterministic Mock{% endif %}
+                    </span>
+                </div>
+                <a href="{% url 'intelligence:demo_controls' %}" title="Configure AI Provider" class="text-slate-400 hover:text-white transition">
+                    <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Core Workflow</div>
+                
+                <a href="{% url 'intelligence:dashboard' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 text-slate-400 {% if request.resolver_match.url_name == 'dashboard' %}text-white{% endif %}"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="{% url 'intelligence:calendar' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'calendar' in request.path or 'meetings' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-3 text-slate-400 {% if 'calendar' in request.path or 'meetings' in request.path %}text-white{% endif %}"></i>
+                    <span>Calendar & Briefings</span>
+                </a>
+
+                <a href="{% url 'intelligence:transcript_list' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'transcript' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="file-audio" class="w-4 h-4 mr-3 text-slate-400 {% if 'transcript' in request.path %}text-white{% endif %}"></i>
+                    <span>Transcripts & AI Extraction</span>
+                </a>
+
+                <a href="{% url 'intelligence:approval_queue' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'approval' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <div class="flex items-center">
+                        <i data-lucide="check-square" class="w-4 h-4 mr-3 text-slate-400 {% if 'approval' in request.path %}text-white{% endif %}"></i>
+                        <span>Human Review Queue</span>
+                    </div>
+                    {% if pending_approvals_count > 0 %}
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs px-2 py-0.5 rounded-full font-bold">
+                        {{ pending_approvals_count }}
+                    </span>
+                    {% endif %}
+                </a>
+
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 mb-2">Execution & Delivery</div>
+
+                <a href="{% url 'intelligence:task_list' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'tasks' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <div class="flex items-center">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 mr-3 text-slate-400 {% if 'tasks' in request.path %}text-white{% endif %}"></i>
+                        <span>Asana Task Manager</span>
+                    </div>
+                    {% if overdue_tasks_count > 0 %}
+                    <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs px-2 py-0.5 rounded-full font-bold" title="{{ overdue_tasks_count }} Overdue Tasks">
+                        {{ overdue_tasks_count }} overdue
+                    </span>
+                    {% endif %}
+                </a>
+
+                <a href="{% url 'intelligence:weekly_report' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'reports/weekly' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 mr-3 text-slate-400 {% if 'reports/weekly' in request.path %}text-white{% endif %}"></i>
+                    <span>Weekly Overdue Report</span>
+                </a>
+
+                <a href="{% url 'intelligence:email_logs' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'reports/emails' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="mail-check" class="w-4 h-4 mr-3 text-slate-400 {% if 'reports/emails' in request.path %}text-white{% endif %}"></i>
+                    <span>Email Delivery Ledger</span>
+                </a>
+
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 mb-2">Governance & Integrations</div>
+
+                <a href="{% url 'intelligence:integrations' %}" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'integrations' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <div class="flex items-center">
+                        <i data-lucide="layers" class="w-4 h-4 mr-3 text-slate-400 {% if 'integrations' in request.path %}text-white{% endif %}"></i>
+                        <span>Mock Integrations</span>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400" title="Simulated Integrations Active"></span>
+                </a>
+
+                <a href="{% url 'intelligence:audit_trail' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'audit' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="shield-check" class="w-4 h-4 mr-3 text-slate-400 {% if 'audit' in request.path %}text-white{% endif %}"></i>
+                    <span>Audit Trail</span>
+                </a>
+
+                <a href="{% url 'intelligence:demo_controls' %}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition {% if 'demo-controls' in request.path %}bg-indigo-600 text-white shadow-sm shadow-indigo-500/30{% else %}text-slate-300 hover:bg-slate-800/80 hover:text-white{% endif %}">
+                    <i data-lucide="sliders" class="w-4 h-4 mr-3 text-slate-400 {% if 'demo-controls' in request.path %}text-white{% endif %}"></i>
+                    <span>Demo Controls & AI</span>
+                </a>
+            </nav>
+
+            <!-- User Profile / Demo Login Status -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950/40">
+                <div class="flex items-center justify-between px-2 py-1.5">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-indigo-700/80 border border-indigo-500/40 flex items-center justify-center font-bold text-xs text-white">
+                            {% if user.is_authenticated %}{{ user.first_name|first|default:"S" }}{{ user.last_name|first|default:"L" }}{% else %}SL{% endif %}
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-semibold text-white truncate">
+                                {% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Sarah Lin (Demo AE){% endif %}
+                            </p>
+                            <p class="text-[11px] text-slate-400 truncate">Enterprise Lead</p>
+                        </div>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'intelligence:logout' %}" title="Logout" class="text-slate-400 hover:text-rose-400 transition p-1">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'intelligence:login' %}" title="Login" class="text-slate-400 hover:text-indigo-400 transition p-1">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-950">
+            <!-- Top Header Bar -->
+            <header class="h-16 bg-slate-900/80 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6 flex-shrink-0 z-10">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-lg font-bold text-white tracking-tight flex items-center space-x-2">
+                        {% block page_heading %}Dashboard{% endblock %}
+                    </h1>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <!-- Quick Upload CTA -->
+                    <a href="{% url 'intelligence:transcript_list' %}" class="inline-flex items-center px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition shadow-sm shadow-indigo-600/30">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5 mr-1.5"></i>
+                        Process Transcript
+                    </a>
+
+                    <!-- Reseed Demo Button Form -->
+                    <form method="post" action="{% url 'intelligence:demo_controls' %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reseed">
+                        <button type="submit" onclick="return confirm('Reseed demo data? This will restore realistic enterprise client records, meetings, and transcripts.');" class="inline-flex items-center px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition" title="Reseed Demo Database">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1.5 text-indigo-400"></i>
+                            Reseed Demo
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <!-- Django Messages / Toast Notifications -->
+            {% if messages %}
+            <div class="px-6 pt-4 space-y-2 flex-shrink-0">
+                {% for message in messages %}
+                <div class="flex items-center justify-between p-3.5 rounded-lg text-sm border {% if message.tags == 'error' %}bg-rose-950/60 border-rose-800/80 text-rose-200{% elif message.tags == 'success' %}bg-emerald-950/60 border-emerald-800/80 text-emerald-200{% else %}bg-indigo-950/60 border-indigo-800/80 text-indigo-200{% endif %} shadow-md">
+                    <div class="flex items-center space-x-2.5">
+                        {% if message.tags == 'error' %}
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 flex-shrink-0"></i>
+                        {% elif message.tags == 'success' %}
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                        {% else %}
+                        <i data-lucide="info" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Main Scrollable Body -->
+            <main class="flex-1 overflow-y-auto p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Generic HTMX Modal Container -->
+    <div id="modal-container" class="relative z-50"></div>
+
+    <script>
+        // Initialize Lucide icons on page load and after HTMX swaps
+        lucide.createIcons();
+        document.body.addEventListener('htmx:afterSwap', function() {
+            lucide.createIcons();
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

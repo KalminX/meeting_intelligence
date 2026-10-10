@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Briefing: {{ meeting.title }} — Meeting Intelligence{% endblock %}
+{% block page_heading %}
+    <a href="{% url 'intelligence:calendar' %}" class="text-slate-400 hover:text-white mr-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i>
+    </a>
+    Pre-Meeting Intelligence Dossier: {{ meeting.client.name }}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+
+    <!-- Top Action Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 mb-1">
+                <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">{{ meeting.get_meeting_type_display }}</span>
+                <span class="text-slate-500">&bull;</span>
+                <span class="text-xs text-slate-300">{{ meeting.scheduled_start|date:"l, F d, Y @ H:i" }} UTC</span>
+            </div>
+            <h2 class="text-xl font-bold text-white">{{ meeting.title }}</h2>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <form method="post" action="{% url 'intelligence:generate_briefing' meeting.id %}" hx-post="{% url 'intelligence:generate_briefing' meeting.id %}" hx-target="#briefing-container" hx-indicator="#briefing-spinner">
+                {% csrf_token %}
+                <input type="hidden" name="force_refresh" value="true">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="sparkles" class="w-4 h-4 mr-1.5"></i>
+                    <span>Regenerate Intelligence</span>
+                    <span id="briefing-spinner" class="htmx-indicator ml-2">
+                        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                    </span>
+                </button>
+            </form>
+            
+            <a href="{% url 'intelligence:meeting_detail' meeting.id %}" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition">
+                Meeting Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Briefing Content Target Container -->
+    <div id="briefing-container">
+        {% include "intelligence/partials/briefing_content.html" with briefing=briefing meeting=meeting %}
+    </div>
+
+    <!-- Raw AI Prompt & Response Modal / Drawer -->
+    <div id="raw-prompt-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="code" class="w-5 h-5 text-indigo-400"></i>
+                    <h3 class="text-base font-bold text-white">AI Schema & Inspection Logs</h3>
+                </div>
+                <button type="button" onclick="document.getElementById('raw-prompt-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Input Context Schema Sent to AI</h4>
+                    <pre class="bg-slate-950 p-4 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto border border-slate-800">{{ briefing.raw_prompt }}</pre>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Validated JSON Output Received</h4>
+                    <pre class="bg-slate-950 p-4 rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">{{ briefing.raw_response }}</pre>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 flex justify-end">
+                <button type="button" onclick="document.getElementById('raw-prompt-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
+                    Close Inspector
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
